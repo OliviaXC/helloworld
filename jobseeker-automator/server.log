@@ -1,0 +1,28 @@
+
+> jobseeker-automator@0.1.0 dev
+> tsx watch src/server.ts
+
+node:fs:562
+  return binding.open(
+                 ^
+
+Error: ENOENT: no such file or directory, open './test/data/05-versions-space.pdf'
+    at Object.openSync (node:fs:562:18)
+    at Object.readFileSync (node:fs:446:35)
+    at Object.<anonymous> (/workspace/jobseeker-automator/node_modules/pdf-parse/index.js:15:25)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object.transformer (/workspace/jobseeker-automator/node_modules/tsx/dist/register-D46fvsV_.cjs:3:1104)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at cjsLoader (node:internal/modules/esm/translators:266:5) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: './test/data/05-versions-space.pdf'
+}
+
+Node.js v22.16.0
+5:04:20 AM [tsx] change in ./src/util/resumeParser.ts Rerunning...
+cServer listening on http://localhost:3000
