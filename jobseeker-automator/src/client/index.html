@@ -1,0 +1,118 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>JobSeeker Automator</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 900px; }
+      label { display: block; margin-top: 0.5rem; }
+      input, select, textarea { width: 100%; padding: 0.5rem; margin-top: 0.25rem; }
+      button { margin-top: 1rem; padding: 0.75rem 1rem; }
+      .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+      .job { border: 1px solid #ddd; padding: 1rem; border-radius: 8px; margin-top: 1rem; }
+      .score { font-weight: bold; }
+    </style>
+  </head>
+  <body>
+    <h1>JobSeeker Automator</h1>
+    <form id="search-form">
+      <label>Job title
+        <input name="jobTitle" placeholder="e.g. Data Scientist" required />
+      </label>
+      <div class="row">
+        <label>Industry
+          <input name="industry" placeholder="e.g. Fintech" />
+        </label>
+        <label>Target role (optional)
+          <input name="targetRole" placeholder="e.g. Senior Data Scientist" />
+        </label>
+      </div>
+      <div class="row">
+        <label>Pay min (USD)
+          <input name="payMin" type="number" min="0" />
+        </label>
+        <label>Pay max (USD)
+          <input name="payMax" type="number" min="0" />
+        </label>
+      </div>
+      <div class="row">
+        <label>Location
+          <input name="location" placeholder="e.g. San Francisco, CA or Remote" />
+        </label>
+        <label>Radius (miles)
+          <input name="radiusMiles" type="number" min="1" />
+        </label>
+      </div>
+      <label>Metro area
+        <input name="metroArea" placeholder="e.g. Bay Area" />
+      </label>
+      <label>Resume file (PDF/DOCX/TXT)
+        <input id="resume" type="file" accept=".pdf,.docx,.txt" />
+      </label>
+      <div class="row">
+        <label><input type="checkbox" name="providerRemotive" checked /> Remotive</label>
+        <label><input type="checkbox" name="providerArbeitnow" checked /> Arbeitnow</label>
+      </div>
+      <button type="submit">Search</button>
+    </form>
+
+    <div id="results"></div>
+
+    <script>
+      const form = document.getElementById('search-form');
+      const results = document.getElementById('results');
+      const resumeInput = document.getElementById('resume');
+      let resumeText = '';
+
+      resumeInput.addEventListener('change', async () => {
+        const file = resumeInput.files[0];
+        if (!file) return;
+        const fd = new FormData();
+        fd.append('file', file);
+        const res = await fetch('/api/upload-resume', { method: 'POST', body: fd });
+        const json = await res.json();
+        resumeText = json.text || '';
+        alert('Resume parsed successfully');
+      });
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = new FormData(form);
+        const body = {
+          jobTitle: data.get('jobTitle'),
+          industry: data.get('industry') || undefined,
+          targetRole: data.get('targetRole') || undefined,
+          payMin: data.get('payMin') ? Number(data.get('payMin')) : undefined,
+          payMax: data.get('payMax') ? Number(data.get('payMax')) : undefined,
+          location: data.get('location') || undefined,
+          radiusMiles: data.get('radiusMiles') ? Number(data.get('radiusMiles')) : undefined,
+          metroArea: data.get('metroArea') || undefined,
+          providers: [
+            data.get('providerRemotive') ? 'remotive' : null,
+            data.get('providerArbeitnow') ? 'arbeitnow' : null,
+          ].filter(Boolean),
+          resumeText,
+        };
+        const res = await fetch('/api/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const json = await res.json();
+        results.innerHTML = '';
+        for (const job of json.jobs || []) {
+          const div = document.createElement('div');
+          div.className = 'job';
+          div.innerHTML = `
+            <div class="score">Score: ${(job.score*100).toFixed(0)}%</div>
+            <a href="${job.url}" target="_blank">${job.title}</a>
+            <div>${job.company} • ${job.location || 'N/A'} • ${job.source}</div>
+            <div style="margin-top: .5rem; white-space: pre-wrap;">${(job.description || '').slice(0, 500)}...</div>
+          `;
+          results.appendChild(div);
+        }
+      });
+    </script>
+  </body>
+</html>
